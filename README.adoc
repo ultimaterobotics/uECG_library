@@ -1,10 +1,9 @@
-
-# uECG Library for Arduino
+= uECG Library for Arduino =
 
 This library allows to receive data from uECG device using nRF24 radio module
 with the help of RF24 library, providing data parsing and simple data access
 
-# License 
+== License ==
 
 Copyright (c) Ultimate Robotics. All right reserved.
 

@@ -1,0 +1,30 @@
+#######################################
+# Syntax Coloring Map For Keyboard
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin		KEYWORD2
+run		KEYWORD2
+getID		KEYWORD2
+getDataCount	KEYWORD2
+getBPM		KEYWORD2
+getECG		KEYWORD2
+getBattery	KEYWORD2
+getGSR		KEYWORD2
+getHRV		KEYWORD2
+getSteps	KEYWORD2
+getAccel	KEYWORD2
+getLastRR	KEYWORD2
+getLastRRid	KEYWORD2
+getHRVbins	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
