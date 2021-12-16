@@ -34,11 +34,15 @@ enum param_sends
   param_emg_spectrum
 };
 
+uint8_t dewhite_table[31] = {2,77,61,195,248,236,82,250,161,111,57,89,131,107,163,34,4,154,123,135,241,216,165,245,66,222,114,179,6,215,70};
+
 uECG_::uECG_(void)
 {
 	protocol_detected = -1;
 	avg_b0 = 20;
 	avg_b1 = 20;
+	avg_diff = 1;
+	need_dewhite = -1;
 	data.prev_ecg_update_ms = millis();
 	data.lf_ecg_value = 0;
 	data.lf_data_count = 0;
@@ -110,7 +114,32 @@ void uECG_::run()
 	uint8_t rf_pack[33];
 	rf->read(rf_pack, 32); //processing packet
 	uint8_t *in_pack = rf_pack+1; //ignore 1st byte
-	if(protocol_detected < 1)
+	if(need_dewhite == 1)
+		for(int x = 0; x < 31; x++)
+			in_pack[x] = in_pack[x]^dewhite_table[x];
+/*	for(int x = 0; x < 31; x++)
+	{
+		Serial.print(in_pack[x]);
+		Serial.print(' ');
+	}
+	Serial.println();*/
+	if(need_dewhite < 0)
+	{
+		static uint8_t prev_pack0 = 0;
+		static int dw_cnt = 0;
+		float dp = 0;
+		if(in_pack[0] > prev_pack0) dp = in_pack[0] - prev_pack0;
+		else dp = prev_pack0 - in_pack[0];
+		avg_diff *= 0.98;
+		avg_diff += 0.02*dp;
+		dw_cnt++;
+		if(dw_cnt > 500)
+		{
+			if(avg_diff < 5) need_dewhite = 0;
+			else need_dewhite = 1;
+		}
+	}
+	if(protocol_detected < 1 && need_dewhite >= 0)
 	{
 		avg_b0 *= 0.98;
 		avg_b0 += 0.02*in_pack[0];
@@ -136,21 +165,34 @@ void uECG_::run()
 	}
 	byte chk = in_pack[message_length-1];
 	byte checksum = 0;
+	byte checksumP = 0;
+	byte check_ok = 0;
 	for(int x = 0; x < message_length-1; x++)
-	{
 		checksum += in_pack[x];
-	}
 	if(checksum != chk)
 	{
-//		for(int x = 0; x < message_length+1; x++)
-//		{
-//			Serial.print(in_pack[x]);
-//			Serial.print(' ');
-//		}
-//		Serial.print("check err: ");
-//		Serial.print(chk);
-//		Serial.print(' ');
-//		Serial.println(checksum);
+		checksum -= in_pack[message_length-2];
+		for(int x = 0; x < message_length-2; x+=2)
+			checksumP += in_pack[x];
+		if(checksum == in_pack[message_length-2] && checksumP == chk)
+		{
+			check_ok = 1;
+			protocol_detected = 3;
+		}
+	}
+	else check_ok = 1;
+
+	if(!check_ok)
+	{
+		for(int x = 0; x < message_length+1; x++)
+		{
+			Serial.print(in_pack[x]);
+			Serial.print(' ');
+		}
+		Serial.print("check err: ");
+		Serial.print(chk);
+		Serial.print(' ');
+		Serial.println(checksum);
 		return;
 	}
 	byte u1 = in_pack[2];//32-bit unit ID, unique for every uECG device
@@ -160,6 +202,12 @@ void uECG_::run()
 
 	int ppos = 6;
 	byte data_points = in_pack[ppos++];
+	byte data_id = 0;
+	if(protocol_detected == 3)
+	{
+		data_id = data_points;
+		data_points = 9;
+	}
 	if(data_points > 10) return; //something is wrong, impossible to fit into 32-bytes packet
 	data.id = (u1<<24) | (u2<<16) | (u3<<8) | u4;
 

@@ -53,8 +53,10 @@ private:
 	RF24 *rf;
 	uECG_data data;
 	int protocol_detected;
+	int need_dewhite;
 	float avg_b0;
 	float avg_b1;
+	float avg_diff;
 	uint8_t swapbits(uint8_t a);
 	float decode_acc(float acc);
 public:
