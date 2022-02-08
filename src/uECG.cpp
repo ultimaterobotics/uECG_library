@@ -116,7 +116,7 @@ void uECG_::run()
 	uint8_t *in_pack = rf_pack+1; //ignore 1st byte
 	if(need_dewhite == 1)
 		for(int x = 0; x < 31; x++)
-			in_pack[x] = in_pack[x]^dewhite_table[x];
+			in_pack[x] = in_pack[x]^pgm_read_byte(dewhite_table+x);
 /*	for(int x = 0; x < 31; x++)
 	{
 		Serial.print(in_pack[x]);

@@ -37,7 +37,7 @@ void setup() {
   display.cp437(true);         // Use full 256 char 'Code Page 437' font
   display.display();
   delay(100);
-  Serial.println("after display");
+  Serial.println(F("after display"));
 }
 
 uint32_t prev_data_count = 0;
@@ -51,6 +51,7 @@ float ecg_min = -1;
 int ecg_size = 40;
 
 int displ_phase = 0;
+uint32_t print_ms = 0;
 
 void loop() 
 {
@@ -58,9 +59,14 @@ void loop()
   uint32_t data_count = uECG.getDataCount();
   int new_data = data_count - prev_data_count;
   prev_data_count = data_count;
+  uint32_t ms = millis();
+  if(ms - print_ms > 500)
+  {
+    Serial.println(uECG.getLastRR());
+    print_ms = ms;
+  }
   if(new_data > 0)
   {
-    uint32_t ms = millis();
     int16_t ecg_data[8];
     uECG.getECG(ecg_data, new_data);
     for(int x = 0; x < new_data; x++)
@@ -87,11 +93,11 @@ void loop()
       {
         display.clearDisplay();
         display.setCursor(0, 0);
-        display.print("BPM: ");
+        display.print(F("BPM: "));
         display.println(uECG.getBPM());
-        display.print(" RR: ");
+        display.print(F(" RR: "));
         display.println(uECG.getLastRR());
-        display.print("steps: ");
+        display.print(F("steps: "));
         display.print(uECG.getSteps());
         int batt_mv = uECG.getBattery();
         int batt_perc = (batt_mv - 3300)/8;
